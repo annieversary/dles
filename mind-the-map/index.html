@@ -611,7 +611,7 @@ function renderPanel(){
   const t=current(), hint=mode==="daily"?state.hint:practice.hint;
   P.innerHTML=`<p class="find">Find this station</p><p class="station">${esc(t)}</p>
     <div class="row"><button class="btn" id="go" ${selected?"":"disabled"}>${selected?"Confirm":"Tap a station"}</button>
-    ${hint?chips(t,true):`<button class="btn ghost" id="hint">Show its lines</button>`}</div>`;
+    ${hint?chips(t,true):`<button class="btn ghost" id="hint">Show lines</button>`}</div>`;
   $("go").onclick=confirmGuess; if($("hint")) $("hint").onclick=useHint;
 }
 const emoji=r=>({g:"🟩",y:"🟨",o:"🟧",r:"🟥"}[grade(r.h)]);
