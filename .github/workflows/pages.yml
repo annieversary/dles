@@ -1,0 +1,55 @@
+name: Deploy to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+
+      - name: Test games
+        run: |
+          for pkg in */package.json; do
+            (cd "$(dirname "$pkg")" && npm ci && npm test)
+          done
+
+      # Only the landing page and each game's index.html are published.
+      - name: Assemble site
+        run: |
+          mkdir _site
+          cp index.html _site/
+          for page in */index.html; do
+            mkdir -p "_site/$(dirname "$page")"
+            cp "$page" "_site/$page"
+          done
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
