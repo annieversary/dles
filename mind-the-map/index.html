@@ -7,84 +7,98 @@
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../icons/icon-192.png">
 <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
-<meta name="theme-color" content="#E4EAEF" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0E1A23" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1ECFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1B1830" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-title" content="dles">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#E4EAEF; --land:#F3F5F7; --river:#BCD4E3; --ink:#15212C; --muted:#5B6975;
-  --card:#FFFFFF; --edge:#CCD5DC; --dot:#FFFFFF; --northern:#15212C;
-  --good:#1E8A4C; --near:#C99A06; --mid:#D9661F; --far:#C2303A; --sel:#15212C;
+  --bg:#F1ECFF; --land:#FBF9FF; --river:#D3E6FF; --ink:#2E2A4F; --muted:#6B6790;
+  --card:#FFFFFF; --edge:#E4DEF7; --soft:#F4F1FD; --dot:#FFFFFF; --northern:#2E2A4F;
+  --accent:#6656E0; --on-accent:#FFFFFF; --sel:#6656E0;
+  --good:#2F9E62; --near:#E0A800; --mid:#F08A3E; --far:#E5566A;
+  --good-bg:#D9F5E4; --good-ink:#1D6B41; --near-bg:#FFF0B8; --near-ink:#6B4E00;
+  --mid-bg:#FFE2CC; --mid-ink:#8A3F0A; --far-bg:#FFDDE2; --far-ink:#9C2234;
+  --shadow:0 14px 34px rgba(90,64,190,.14); --shadow-sm:0 6px 16px rgba(90,64,190,.14);
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-  --bg:#0E1A23; --land:#15232E; --river:#1F3B50; --ink:#E8EEF2; --muted:#93A3AF;
-  --card:#1A2A36; --edge:#2B3E4C; --dot:#15232E; --northern:#E8EEF2; --sel:#FFFFFF; color-scheme:dark;
+  --bg:#1B1830; --land:#211D38; --river:#2E3F66; --ink:#EEEAFB; --muted:#A9A3C9;
+  --card:#28233F; --edge:#3A3460; --soft:#332D52; --dot:#211D38; --northern:#EEEAFB;
+  --accent:#9A8FFF; --on-accent:#1B1830; --sel:#FFFFFF;
+  --good-bg:#1F4A35; --good-ink:#B5EDCB; --near-bg:#4D3F12; --near-ink:#FFE7A0;
+  --mid-bg:#553219; --mid-ink:#FFD2B0; --far-bg:#5A2531; --far-ink:#FFC7D0;
+  --shadow:0 14px 34px rgba(0,0,0,.35); --shadow-sm:0 6px 16px rgba(0,0,0,.3); color-scheme:dark;
 }}
 :root[data-theme="dark"]{
-  --bg:#0E1A23; --land:#15232E; --river:#1F3B50; --ink:#E8EEF2; --muted:#93A3AF;
-  --card:#1A2A36; --edge:#2B3E4C; --dot:#15232E; --northern:#E8EEF2; --sel:#FFFFFF; color-scheme:dark;
+  --bg:#1B1830; --land:#211D38; --river:#2E3F66; --ink:#EEEAFB; --muted:#A9A3C9;
+  --card:#28233F; --edge:#3A3460; --soft:#332D52; --dot:#211D38; --northern:#EEEAFB;
+  --accent:#9A8FFF; --on-accent:#1B1830; --sel:#FFFFFF;
+  --good-bg:#1F4A35; --good-ink:#B5EDCB; --near-bg:#4D3F12; --near-ink:#FFE7A0;
+  --mid-bg:#553219; --mid-ink:#FFD2B0; --far-bg:#5A2531; --far-ink:#FFC7D0;
+  --shadow:0 14px 34px rgba(0,0,0,.35); --shadow-sm:0 6px 16px rgba(0,0,0,.3); color-scheme:dark;
 }
 html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0; height:100%; background:var(--bg); color:var(--ink);
-  font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:16px; line-height:1.4;
+  font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif; font-weight:600; font-size:16px; line-height:1.4;
   display:flex; flex-direction:column; overflow:hidden; -webkit-tap-highlight-color:transparent}
-header{display:flex; align-items:center; gap:12px; padding:10px 16px; max-width:1100px; width:100%; margin:0 auto}
-h1{margin:0; font-size:1.25rem; font-weight:800; font-stretch:112%; letter-spacing:-.01em; white-space:nowrap}
-h1 small{font-weight:500; font-stretch:100%; color:var(--muted); font-size:.85rem; margin-left:6px}
-.tiles{display:flex; gap:5px; margin-left:auto}
-.tile{width:14px; height:14px; border-radius:3px; background:var(--edge)}
-.tile.cur{outline:2px solid var(--ink); outline-offset:1px}
+header{display:flex; align-items:center; gap:12px; padding:14px 18px 12px; max-width:1100px; width:100%; margin:0 auto}
+h1{margin:0; font:800 1.55rem/1.1 "Baloo 2",system-ui,sans-serif; white-space:nowrap}
+h1 small{font-weight:600; color:var(--muted); font-size:.95rem; margin-left:6px}
+.tiles{display:flex; align-items:center; gap:6px; margin-left:auto; padding:6px 9px; background:var(--card); border-radius:99px; box-shadow:var(--shadow-sm)}
+.tile{width:14px; height:14px; border-radius:50%; background:var(--edge)}
+.tile.cur{background:var(--card); box-shadow:inset 0 0 0 3px var(--accent)}
 .tile.g{background:var(--good)} .tile.y{background:var(--near)} .tile.o{background:var(--mid)} .tile.r{background:var(--far)}
-.practice-count{margin-left:auto; color:var(--muted); font-size:.9rem}
-#mapwrap{flex:1; position:relative; min-height:0; margin:0 auto; width:100%; max-width:1100px}
+.practice-count{margin-left:auto; color:var(--muted); font-size:.9rem; font-weight:700}
+#mapwrap{flex:1; position:relative; min-height:0; margin:0 auto; width:calc(100% - 24px); max-width:1100px; border-radius:30px; box-shadow:var(--shadow)}
 #map{position:absolute; inset:0; width:100%; height:100%; background:var(--land); touch-action:none; cursor:grab; display:block;
-  border-radius:14px; outline:none}
+  border-radius:30px; outline:none}
 #map.drag{cursor:grabbing}
-#map-transition{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:hidden; border-radius:14px; background:var(--land)}
-@media (max-width:1132px){ #map,#map-transition{border-radius:0} }
-.zoom{position:absolute; right:12px; top:12px; display:flex; flex-direction:column; gap:6px}
-.zoom button{width:40px; height:40px; border-radius:10px; border:1px solid var(--edge); background:var(--card); color:var(--ink);
-  font:600 1.2rem/1 "Archivo",system-ui,sans-serif; cursor:pointer}
-.zoom button.wide{font-size:.7rem; font-weight:700}
-.hint-toast{position:absolute; left:12px; bottom:12px; background:var(--card); border:1px solid var(--edge); border-radius:10px; padding:6px 10px; font-size:.82rem; color:var(--muted); pointer-events:none; transition:opacity .4s}
-#card{background:var(--card); border-top:1px solid var(--edge); padding:14px 16px 16px}
+#map-transition{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:hidden; border-radius:30px; background:var(--land)}
+.zoom{position:absolute; right:12px; top:12px; display:flex; flex-direction:column; gap:8px}
+.zoom button{width:44px; height:44px; border-radius:50%; border:0; background:var(--card); color:var(--ink); box-shadow:var(--shadow-sm);
+  font:700 1.3rem/1 "Nunito",system-ui,sans-serif; cursor:pointer}
+.zoom button.wide{font-size:.72rem; font-weight:800}
+.hint-toast{position:absolute; left:12px; bottom:12px; background:var(--card); border-radius:99px; box-shadow:var(--shadow-sm); padding:7px 13px; font-size:.82rem; font-weight:700; color:var(--muted); pointer-events:none; transition:opacity .4s}
+#card{background:var(--card); margin:14px auto 12px; width:calc(100% - 24px); max-width:1100px; border-radius:30px; box-shadow:var(--shadow); padding:18px 20px 20px}
 .inner{max-width:720px; margin:0 auto}
-.find{color:var(--muted); font-size:.9rem; margin:0}
-.station{margin:2px 0 10px; font-size:clamp(1.7rem,6vw,2.6rem); font-weight:800; font-stretch:80%; line-height:1.02; letter-spacing:-.01em}
+.find{color:var(--muted); font-size:.95rem; font-weight:700; margin:0}
+.station{margin:2px 0 12px; font:800 clamp(1.9rem,6.5vw,2.8rem)/1.05 "Baloo 2",system-ui,sans-serif; letter-spacing:-.01em}
 .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-button.btn{appearance:none; border:0; border-radius:12px; padding:12px 18px; font:700 1rem/1 "Archivo",system-ui,sans-serif; cursor:pointer;
-  background:var(--ink); color:var(--card); min-height:46px}
-button.btn.ghost{background:transparent; color:var(--ink); border:1.5px solid var(--edge)}
-button.btn:disabled{opacity:.35; cursor:default}
-button:focus-visible{outline:3px solid var(--near); outline-offset:2px}
-.chips{display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px}
+button.btn{appearance:none; border:0; border-radius:99px; padding:14px 24px; font:800 1.05rem/1 "Nunito",system-ui,sans-serif; cursor:pointer;
+  background:var(--accent); color:var(--on-accent); min-height:52px; box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 35%,transparent);
+  transition:transform .12s ease}
+button.btn:active:not(:disabled){transform:scale(.97)}
+button.btn.ghost{background:var(--soft); color:var(--ink); box-shadow:none}
+button.btn:disabled{opacity:.4; cursor:default; box-shadow:none}
+button:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.chips{display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px}
 .chips.inline{margin:0; flex:1; min-width:0}
-.chip{display:inline-flex; align-items:center; gap:6px; font-size:.82rem; font-weight:600; padding:4px 9px 4px 6px; border-radius:99px; border:1px solid var(--edge)}
-.chip i{width:18px; height:6px; border-radius:3px; display:inline-block}
-.verdict{font-size:1.15rem; font-weight:700; margin:0 0 4px}
-.verdict.g{color:var(--good)} .verdict.y{color:var(--near)} .verdict.o{color:var(--mid)} .verdict.r{color:var(--far)}
-.detail{margin:0 0 12px; color:var(--muted)}
-.summary h2{margin:0 0 4px; font-size:1.5rem; font-weight:800; font-stretch:90%}
-.bigtiles{display:flex; gap:6px; margin:10px 0}
-.bigtiles .tile{width:30px; height:30px; border-radius:6px}
-.stats{display:flex; gap:22px; margin:6px 0 14px; color:var(--muted); font-size:.9rem}
-.stats b{display:block; color:var(--ink); font-size:1.35rem; font-stretch:90%}
-.copied{font-size:.85rem; color:var(--good)}
-svg text{font-family:"Archivo",system-ui,sans-serif; font-weight:700; paint-order:stroke; stroke:var(--land); stroke-linejoin:round; fill:var(--ink)}
+.chip{display:inline-flex; align-items:center; gap:6px; font-size:.85rem; font-weight:800; padding:6px 11px 6px 8px; border-radius:99px; background:var(--soft)}
+.chip i{width:18px; height:7px; border-radius:4px; display:inline-block}
+.verdict{display:inline-block; font:800 1.3rem/1.2 "Baloo 2",system-ui,sans-serif; margin:0 0 8px; padding:5px 14px; border-radius:99px}
+.verdict.g{background:var(--good-bg); color:var(--good-ink)} .verdict.y{background:var(--near-bg); color:var(--near-ink)}
+.verdict.o{background:var(--mid-bg); color:var(--mid-ink)} .verdict.r{background:var(--far-bg); color:var(--far-ink)}
+.detail{margin:0 0 12px; color:var(--muted); font-weight:700}
+.summary h2{margin:0 0 4px; font:800 1.7rem/1.1 "Baloo 2",system-ui,sans-serif}
+.bigtiles{display:flex; gap:8px; margin:12px 0}
+.bigtiles .tile{width:30px; height:30px}
+.stats{display:flex; gap:22px; margin:6px 0 14px; color:var(--muted); font-size:.9rem; font-weight:700}
+.stats b{display:block; color:var(--ink); font:800 1.5rem/1.2 "Baloo 2",system-ui,sans-serif}
+.copied{font-size:.85rem; font-weight:700; color:var(--good-ink)}
+svg text{font-family:"Baloo 2",system-ui,sans-serif; font-weight:700; paint-order:stroke; stroke:var(--land); stroke-linejoin:round; fill:var(--ink)}
 @keyframes pulse{0%{opacity:.9}100%{opacity:0}}
 .pulse{animation:pulse 1.4s ease-out infinite; transform-box:fill-box; transform-origin:center}
 @media (prefers-reduced-motion:reduce){ .pulse{animation:none; opacity:.5} }
-.modes{position:absolute; left:12px; top:12px; display:flex; background:var(--card); border:1px solid var(--edge); border-radius:12px; padding:3px}
-.modes button{appearance:none; border:0; background:transparent; color:var(--muted); font:600 .88rem/1 "Archivo",system-ui,sans-serif; padding:9px 12px; border-radius:9px; cursor:pointer}
-.modes button[aria-pressed="true"]{background:var(--ink); color:var(--card)}
-.map-credit{position:absolute; right:12px; bottom:10px; color:var(--muted); background:var(--land); padding:2px 5px; border-radius:4px; font-size:.65rem}
+.modes{position:absolute; left:12px; top:12px; display:flex; background:var(--card); border-radius:99px; box-shadow:var(--shadow-sm); padding:4px}
+.modes button{appearance:none; border:0; background:transparent; color:var(--muted); font:700 .9rem/1 "Nunito",system-ui,sans-serif; padding:10px 14px; border-radius:99px; cursor:pointer}
+.modes button[aria-pressed="true"]{background:var(--accent); color:var(--on-accent)}
+.map-credit{position:absolute; right:14px; bottom:12px; color:var(--muted); background:var(--land); padding:2px 6px; border-radius:99px; font-size:.65rem}
 </style>
 </head>
 <body>
