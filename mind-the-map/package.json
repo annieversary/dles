@@ -1,0 +1,6 @@
+{
+  "name": "mind-the-map",
+  "private": true,
+  "scripts": { "test": "node --test tests/*.test.cjs" },
+  "devDependencies": { "happy-dom": "20.8.9" }
+}
