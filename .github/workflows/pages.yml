@@ -29,11 +29,11 @@ jobs:
             (cd "$(dirname "$pkg")" && npm ci && npm test)
           done
 
-      # Only the landing page and each game's index.html are published.
+      # Only the landing page, PWA files and each game's index.html are published.
       - name: Assemble site
         run: |
           mkdir _site
-          cp index.html _site/
+          cp -r index.html manifest.webmanifest sw.js icons _site/
           for page in */index.html; do
             mkdir -p "_site/$(dirname "$page")"
             cp "$page" "_site/$page"
