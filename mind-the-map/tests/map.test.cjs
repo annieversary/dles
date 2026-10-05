@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { Window } = require('happy-dom');
-const html = fs.readFileSync(require('node:path').join(__dirname, '../Mind the Map.html'), 'utf8');
+const html = fs.readFileSync(require('node:path').join(__dirname, '../index.html'), 'utf8');
 const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 
 function game({ width = 1100, height = 650, storage = {}, reduced = false } = {}) {
@@ -27,11 +27,15 @@ function game({ width = 1100, height = 650, storage = {}, reduced = false } = {}
     get state(){return state}, get targets(){return dailyTargets}, get dkey(){return DKEY},
     stationsNamed, current, tap, setMapMode, render, nextRound, confirmGuess,
     get practice(){return practice}, get gameMode(){return mode},
+    get transition(){return mapTransition},
   })`);
+  const advance = ms => {
+    time += ms;
+    const jobs = [...frames.values()]; frames.clear(); jobs.forEach(fn=>fn(time));
+  };
   const flush = () => {
     for (let i=0; frames.size && i<100; i++) {
-      time += 100;
-      const jobs = [...frames.values()]; frames.clear(); jobs.forEach(fn=>fn(time));
+      advance(100);
     }
     assert.equal(frames.size, 0, 'animations finish');
   };
@@ -45,7 +49,7 @@ function game({ width = 1100, height = 650, storage = {}, reduced = false } = {}
     const key = window.localStorage.key(i); return [key,window.localStorage.getItem(key)];
   }));
   flush();
-  return { api, window, map, flush, click, choose, snapshot, close:()=>window.happyDOM.abort() };
+  return { api, window, map, advance, flush, click, choose, snapshot, close:()=>window.happyDOM.abort() };
 }
 
 test('every station has finite, distinct, selectable TfL diagram markers', async () => {
@@ -154,5 +158,65 @@ test('mobile zoom, whole-map fit, pointer selection and keyboard pan', async()=>
     g.click('m-geo');g.click('m-sch');g.click('zall');
     assert.ok(Number.isFinite(g.api.view.s)&&g.api.view.s>0);
     assert.ok(!/NaN|undefined/.test(g.map.outerHTML));
+  } finally { await g.close(); }
+});
+
+test('stations and tracks move through intermediate positions, and rapid toggles reverse without a jump', async()=>{
+  const g=game();
+  try {
+    g.window.document.getElementById('m-sch').click();
+    const transition=g.api.transition;
+    assert.ok(transition);
+    const dot=transition.dots.find(d=>d.station.n==='Waterloo');
+    assert.ok(Math.hypot(dot.geo[0]-dot.dia[0],dot.geo[1]-dot.dia[1])>1);
+    assert.equal(Number(dot.el.getAttribute('cx')),dot.geo[0]);
+    const firstPath=transition.paths.find(p=>p.el.getAttribute('stroke')!=='var(--river)');
+    const initialPath=firstPath.el.getAttribute('d');
+    g.advance(400);
+    const x=Number(dot.el.getAttribute('cx')),y=Number(dot.el.getAttribute('cy'));
+    assert.ok(Math.abs(x-dot.geo[0])>.01 && Math.abs(x-dot.dia[0])>.01);
+    assert.ok(x>=Math.min(dot.geo[0],dot.dia[0]) && x<=Math.max(dot.geo[0],dot.dia[0]));
+    assert.ok(y>=Math.min(dot.geo[1],dot.dia[1]) && y<=Math.max(dot.geo[1],dot.dia[1]));
+    assert.notEqual(firstPath.el.getAttribute('d'),initialPath);
+    assert.ok(transition.paths.every(p=>!p.el.getAttribute('d').includes('NaN')));
+    g.window.document.getElementById('m-geo').click();
+    assert.equal(g.api.transition,transition);
+    assert.equal(Number(dot.el.getAttribute('cx')),x);
+    g.advance(100);
+    assert.ok(Math.abs(Number(dot.el.getAttribute('cx'))-dot.geo[0])<Math.abs(x-dot.geo[0]));
+    g.flush();
+    assert.equal(g.api.transition,null);
+    assert.equal(g.api.mode,'geo');
+    assert.equal(g.map.style.opacity,'');
+    assert.equal(g.window.document.getElementById('map-transition').children.length,0);
+  } finally { await g.close(); }
+});
+
+test('moving stations cannot cause an accidental guess; zoom settles the destination', async()=>{
+  const g=game();
+  try {
+    g.window.document.getElementById('m-sch').click();g.advance(300);
+    const dot=g.api.transition.dots[0];
+    const event={pointerId:1,clientX:Number(dot.el.getAttribute('cx')),clientY:Number(dot.el.getAttribute('cy')),bubbles:true};
+    g.map.dispatchEvent(new g.window.PointerEvent('pointerdown',event));
+    g.map.dispatchEvent(new g.window.PointerEvent('pointerup',event));g.flush();
+    assert.equal(g.api.transition,null);
+    assert.equal(g.api.selected,null);
+    assert.equal(g.api.state.rounds.length,0);
+    g.window.document.getElementById('m-geo').click();g.advance(200);g.click('zin');
+    assert.equal(g.api.transition,null);
+    assert.equal(g.api.mode,'geo');
+    assert.ok(Number.isFinite(g.api.view.s));
+  } finally { await g.close(); }
+});
+
+test('reduced motion switches immediately without building animation geometry', async()=>{
+  const g=game({reduced:true});
+  try {
+    g.window.document.getElementById('m-sch').click();
+    assert.equal(g.api.mode,'dia');
+    assert.equal(g.api.transition,null);
+    assert.equal(g.map.style.opacity,'');
+    assert.equal(g.window.document.getElementById('map-transition').children.length,0);
   } finally { await g.close(); }
 });

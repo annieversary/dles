@@ -6,6 +6,7 @@ Source: https://foi.tfl.gov.uk/FOI-0601-2425/Standard%20Tube%20map%20-%20Decembe
 """
 import copy
 import json
+import math
 from pathlib import Path
 import re
 import sys
@@ -14,7 +15,7 @@ import xml.etree.ElementTree as ET
 import pymupdf
 
 ROOT = Path(__file__).resolve().parents[1]
-HTML = ROOT / 'Mind the Map.html'
+HTML = ROOT / 'index.html'
 NS = 'http://www.w3.org/2000/svg'
 ET.register_namespace('', NS)
 source = ET.parse(sys.argv[1]).getroot()
@@ -211,7 +212,53 @@ for name, locations in points.items():
     points[name] = [p for i,p in enumerate(locations) if not any((p[0]-q[0])**2+(p[1]-q[1])**2 < 4 for q in locations[:i])]
 Path('/tmp/mtm-art.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1247.2 946.1">'+markup+'</svg>')
 Path('/tmp/mtm-diagram.json').write_text(json.dumps({'points': points, 'art': markup}, separators=(',', ':')))
-payload = json.dumps({'points': dict(sorted(points.items())), 'art': markup}, separators=(',', ':'))
+# Sample the published paths once at build time. The animation can then deform
+# both layouts without SVG path APIs or per-frame geometry measurements.
+colors = {f'var(--line-{i})': i for i in list(line_ids.values()) + list(range(21,27))}
+colors.update({'var(--river)': 100, 'var(--land)': 101})
+sample_svg = '<svg xmlns="http://www.w3.org/2000/svg" width="1247.2" height="946.1">'+markup+'</svg>'
+for color, code in colors.items():
+    sample_svg = sample_svg.replace(color, f'#{code:06x}')
+sample_doc = pymupdf.open(stream=sample_svg.encode(), filetype='svg')
+sample_pdf = pymupdf.open(stream=sample_doc.convert_to_pdf(), filetype='pdf')
+reverse_colors = {code: color for color,code in colors.items()}
+def css_color(rgb):
+    if rgb is None:
+        return 'none'
+    r,g,b = [round(c*255) for c in rgb]
+    return reverse_colors.get((r<<16)+(g<<8)+b, 'var(--ink)')
+morph_paths = []
+for drawing in sample_pdf[0].get_drawings():
+    runs, run = [], []
+    for item in drawing['items']:
+        if item[0] == 're':
+            rect = item[1]
+            segments_to_sample = [('l',a,b) for a,b in zip([rect.tl,rect.tr,rect.br,rect.bl],[rect.tr,rect.br,rect.bl,rect.tl])]
+        else:
+            segments_to_sample = [item]
+        for seg in segments_to_sample:
+            if seg[0] not in ('l','c'):
+                continue
+            a,b = seg[1],seg[-1]
+            if run and math.dist(run[-1],a) > .01:
+                runs.append(run); run=[]
+            if not run:
+                run.append(list(a))
+            length = sum(abs(v-u) for u,v in zip(seg[1:],seg[2:]))
+            count = max(1, math.ceil(length/5))
+            for i in range(1,count+1):
+                t=i/count
+                p=a*(1-t)+b*t if seg[0]=='l' else a*(1-t)**3+seg[2]*(3*t*(1-t)**2)+seg[3]*(3*t*t*(1-t))+b*t**3
+                run.append(list(p))
+    if run:
+        if drawing['closePath']:
+            run.append(run[0])
+        runs.append(run)
+    if runs:
+        morph_paths.append({'runs': [[[round(v*20,2) for v in p] for p in run] for run in runs],
+                            'fill': css_color(drawing['fill']), 'stroke': css_color(drawing['color']),
+                            'width': round((drawing['width'] or 0)*20,3)})
+payload = json.dumps({'points': dict(sorted(points.items())), 'art': markup, 'morphPaths': morph_paths}, separators=(',', ':'))
 html = HTML.read_text()
 declaration = 'const SCHEMATIC = '+payload+';'
 if 'const SCHEMATIC = ' in html:
