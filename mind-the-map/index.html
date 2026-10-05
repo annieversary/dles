@@ -23,8 +23,8 @@
   --good-bg:#D9F5E4; --good-ink:#1D6B41; --near-bg:#FFF0B8; --near-ink:#6B4E00;
   --mid-bg:#FFE2CC; --mid-ink:#8A3F0A; --far-bg:#FFDDE2; --far-ink:#9C2234;
   --shadow:0 14px 34px rgba(90,64,190,.14); --shadow-sm:0 6px 16px rgba(90,64,190,.14);
-  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-  color-scheme:light;
+  box-sizing:border-box; color-scheme:light;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
   --bg:#1B1830; --land:#211D38; --river:#2E3F66; --ink:#EEEAFB; --muted:#A9A3C9;
@@ -42,12 +42,13 @@
   --mid-bg:#553219; --mid-ink:#FFD2B0; --far-bg:#5A2531; --far-ink:#FFC7D0;
   --shadow:0 14px 34px rgba(0,0,0,.35); --shadow-sm:0 6px 16px rgba(0,0,0,.3); color-scheme:dark;
 }
-html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px); touch-action:manipulation}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0; height:100%; background:var(--bg); color:var(--ink);
   font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif; font-weight:600; font-size:16px; line-height:1.4;
-  display:flex; flex-direction:column; overflow:hidden; -webkit-tap-highlight-color:transparent}
-header{display:flex; align-items:center; gap:12px; padding:14px 18px 12px; max-width:1100px; width:100%; margin:0 auto}
+  display:flex; flex-direction:column; overflow:hidden; -webkit-tap-highlight-color:transparent;
+  padding:0 env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px)}
+header{display:flex; align-items:center; gap:12px; padding:calc(14px + var(--safe-t)) 18px 12px; max-width:1100px; width:100%; margin:0 auto}
 h1{margin:0; font:800 1.55rem/1.1 "Baloo 2",system-ui,sans-serif; white-space:nowrap}
 h1 small{font-weight:600; color:var(--muted); font-size:.95rem; margin-left:6px}
 .tiles{display:flex; align-items:center; gap:6px; margin-left:auto; padding:6px 9px; background:var(--card); border-radius:99px; box-shadow:var(--shadow-sm)}
@@ -65,7 +66,7 @@ h1 small{font-weight:600; color:var(--muted); font-size:.95rem; margin-left:6px}
   font:700 1.3rem/1 "Nunito",system-ui,sans-serif; cursor:pointer}
 .zoom button.wide{font-size:.72rem; font-weight:800}
 .hint-toast{position:absolute; left:12px; bottom:12px; background:var(--card); border-radius:99px; box-shadow:var(--shadow-sm); padding:7px 13px; font-size:.82rem; font-weight:700; color:var(--muted); pointer-events:none; transition:opacity .4s}
-#card{background:var(--card); margin:14px auto 12px; width:calc(100% - 24px); max-width:1100px; border-radius:30px; box-shadow:var(--shadow); padding:18px 20px 20px}
+#card{background:var(--card); margin:14px auto max(12px,var(--safe-b)); width:calc(100% - 24px); max-width:1100px; border-radius:30px; box-shadow:var(--shadow); padding:18px 20px 20px}
 .inner{max-width:720px; margin:0 auto}
 .find{color:var(--muted); font-size:.95rem; font-weight:700; margin:0}
 .station{margin:2px 0 12px; font:800 clamp(1.9rem,6.5vw,2.8rem)/1.05 "Baloo 2",system-ui,sans-serif; letter-spacing:-.01em}
@@ -99,6 +100,65 @@ svg text{font-family:"Baloo 2",system-ui,sans-serif; font-weight:700; paint-orde
 .modes button{appearance:none; border:0; background:transparent; color:var(--muted); font:700 .9rem/1 "Nunito",system-ui,sans-serif; padding:10px 14px; border-radius:99px; cursor:pointer}
 .modes button[aria-pressed="true"]{background:var(--accent); color:var(--on-accent)}
 .map-credit{position:absolute; right:14px; bottom:12px; color:var(--muted); background:var(--land); padding:2px 6px; border-radius:99px; font-size:.65rem}
+.short{display:none}
+.sum-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.sheet-toggle{display:none; appearance:none; border:0; border-radius:99px; padding:8px 14px; background:var(--soft); color:var(--ink);
+  font:800 .85rem/1 "Nunito",system-ui,sans-serif; cursor:pointer}
+
+/* Phones (portrait) and short landscape screens share the compact panel. */
+@media (max-width:600px), (orientation:landscape) and (max-height:500px){
+  .long{display:none} .short{display:inline}
+  #card{padding:14px 16px 16px; border-radius:26px}
+  .find{font-size:.85rem}
+  .station{margin:0 0 10px}
+  .verdict{font-size:1.1rem; padding:4px 12px; margin:0 0 6px}
+  .detail{font-size:.92rem; margin:0 0 10px}
+  .summary h2{font-size:1.4rem}
+  .bigtiles{margin:10px 0}
+  .bigtiles .tile{width:26px; height:26px}
+  .stats{gap:16px; margin:4px 0 12px; font-size:.82rem}
+  .stats b{font-size:1.3rem}
+  button.btn{padding:12px 18px; min-height:48px; font-size:1rem; white-space:nowrap}
+  .chips.inline{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none}
+  .chips.inline::-webkit-scrollbar{display:none}
+  .chip{flex:none}
+  .modes button{padding:8px 12px; font-size:.82rem}
+  .zoom{flex-direction:row}
+  .zoom button{width:40px; height:40px}
+  #zout{display:none}
+}
+@media (max-width:600px){
+  header{padding:calc(10px + var(--safe-t)) 16px 8px}
+  h1{font-size:1.4rem}
+  #mapwrap,#card{width:calc(100% - 20px)}
+  #card{margin:10px auto max(10px,var(--safe-b))}
+  /* Every panel state reserves the same height so the map never resizes mid-game. */
+  .inner{min-height:136px; display:flex; flex-direction:column; align-items:flex-start}
+  .inner > .row,.inner > .summary{align-self:stretch}
+  .inner > .row{margin-top:auto; flex-wrap:nowrap}
+  .hint-toast{bottom:36px}
+  #card.sheet{position:fixed; left:10px; right:10px; bottom:max(10px,var(--safe-b)); width:auto; margin:0; z-index:5}
+  #card.sheet .inner{min-height:0}
+  #card.sheet.collapsed .sum-body{display:none}
+  body:has(#card.sheet) #mapwrap{margin-bottom:max(10px,var(--safe-b))}
+  body:has(#card.sheet) .map-credit{bottom:calc(var(--card-h,0px) + 8px)}
+  .sheet-toggle{display:inline-block}
+}
+@media (max-width:360px){
+  h1{font-size:1.3rem}
+  h1 small{display:none}
+  .tiles{gap:5px; padding:5px 8px}
+  .tile{width:12px; height:12px}
+  button.btn{padding:12px 14px; font-size:.95rem}
+}
+@media (orientation:landscape) and (max-height:500px){
+  body{display:grid; grid-template-columns:minmax(0,1fr) 300px; grid-template-rows:auto minmax(0,1fr)}
+  #mapwrap{grid-column:1; grid-row:1 / 3; width:auto; max-width:none; margin:max(10px,var(--safe-t)) 0 max(10px,var(--safe-b)) 10px}
+  header{grid-column:2; grid-row:1; flex-wrap:wrap; row-gap:6px; padding:calc(12px + var(--safe-t)) 14px 8px}
+  h1{font-size:1.3rem}
+  .station{font-size:1.8rem}
+  #card{grid-column:2; grid-row:2; align-self:start; width:auto; max-height:calc(100% - max(10px,var(--safe-b))); overflow-y:auto; margin:0 10px max(10px,var(--safe-b))}
+}
 </style>
 </head>
 <body>
@@ -113,7 +173,7 @@ svg text{font-family:"Baloo 2",system-ui,sans-serif; font-weight:700; paint-orde
   </svg>
   <svg id="map-transition" aria-hidden="true" style="display:none"></svg>
   <div class="modes" role="group" aria-label="Map style">
-    <button id="m-geo" aria-pressed="true">Geographic</button><button id="m-sch" aria-pressed="false">Diagram</button>
+    <button id="m-geo" aria-pressed="true"><span class="long">Geographic</span><span class="short">Geo</span></button><button id="m-sch" aria-pressed="false">Diagram</button>
   </div>
   <div class="zoom">
     <button id="zin" aria-label="Zoom in">+</button>
@@ -317,7 +377,11 @@ function measure(){ const r=svg.getBoundingClientRect(); W=r.width; H=r.height; 
 function clampView(v){ v.s=Math.max(minS,Math.min(maxS,v.s));
   const mx=(all.maxx-all.minx)*0.1+W/2/v.s*0.3, my=(all.maxy-all.miny)*0.1+H/2/v.s*0.3;
   v.cx=Math.max(all.minx-mx,Math.min(all.maxx+mx,v.cx)); v.cy=Math.max(all.miny-my,Math.min(all.maxy+my,v.cy)); return v; }
-function startView(m=mapMode){ const r=W<700?9000:24000; const pts=stationsForMode(m).filter(s=>Math.hypot(s.g[0]-FCX,s.g[1]-FCY)<r).map(s=>s[key(m)]); return fitBox(bboxOf(pts),W<700?10:24); }
+function startView(m=mapMode){ const phone=W<700, portrait=phone&&H>W, r=portrait?4500:phone?9000:24000;
+  const b=bboxOf(stationsForMode(m).filter(s=>Math.hypot(s.g[0]-FCX,s.g[1]-FCY)<r).map(s=>s[key(m)])), v=fitBox(b,phone?10:24);
+  // In portrait, zoom halfway (geometrically) between fitting the centre and filling the frame with it.
+  if(portrait) v.s=Math.sqrt(v.s*Math.max((W-20)/(b.maxx-b.minx||1),(H-20)/(b.maxy-b.miny||1)));
+  return v; }
 
 const lineEls=new Map();
 function buildMap(){
@@ -534,7 +598,7 @@ svg.addEventListener("pointermove",e=>{ const p=ptrs.get(e.pointerId); if(!p) re
   else if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; const r=svg.getBoundingClientRect(); const d=Math.hypot(a.x-b.x,a.y-b.y), mx=(a.x+b.x)/2-r.left, my=(a.y+b.y)/2-r.top;
     if(pinch0){ view.cx-=(mx-pinch0.mx)/view.s; view.cy-=(my-pinch0.my)/view.s; zoomAt(d/pinch0.d,mx,my); } pinch0={d,mx,my}; } });
 function up(e){ const p=ptrs.get(e.pointerId); if(!p) return; ptrs.delete(e.pointerId); if(ptrs.size<2) pinch0=null;
-  if(ptrs.size===0){ svg.classList.remove("drag"); if(!moved&&!multi){ const r=svg.getBoundingClientRect(); tap(e.clientX-r.left,e.clientY-r.top); } } }
+  if(ptrs.size===0){ svg.classList.remove("drag"); if(!moved&&!multi){ const r=svg.getBoundingClientRect(); tap(e.clientX-r.left,e.clientY-r.top,e.pointerType==="touch"); } } }
 svg.addEventListener("pointerup",up); svg.addEventListener("pointercancel",e=>{ptrs.delete(e.pointerId); moved=true;});
 svg.addEventListener("wheel",e=>{ e.preventDefault(); const r=svg.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY*(e.deltaMode?0.05:0.0022)),e.clientX-r.left,e.clientY-r.top); hideToast(); },{passive:false});
 $("zin").onclick=()=>zoomAt(1.6); $("zout").onclick=()=>zoomAt(1/1.6); $("zall").onclick=()=>animateTo(fitBox(all,24));
@@ -552,11 +616,17 @@ let practice={count:0,correct:0,target:null,hint:false,done:null};
 const randomName=()=>names[Math.floor(Math.random()*names.length)];
 function current(){ return mode==="daily"?dailyTargets[state.rounds.length]:practice.target; }
 function roundLocked(){ return mode==="daily"?(state.rounds.length>=ROUNDS||!!state.pending):!!practice.done; }
-function tap(sx,sy){
+function tap(sx,sy,touch){
   if(roundLocked()||mapTransition) return;
-  const wx=view.cx+(sx-W/2)/view.s, wy=view.cy+(sy-H/2)/view.s; let best=null,bd=1e18;
+  const wx=view.cx+(sx-W/2)/view.s, wy=view.cy+(sy-H/2)/view.s; let best=null,bd=1e18,rival=1e18;
   for(const s of stationsForMode()){ const d=(s.x-wx)**2+(s.y-wy)**2; if(d<bd){bd=d;best=s;} }
   const lim=26/view.s; if(!best||bd>lim*lim) return;
+  // A fingertip can't tell apart stations a few pixels apart, so zoom in on them instead of guessing.
+  if(touch&&view.s<maxS/2){
+    for(const s of stationsForMode()) if(s.n!==best.n) rival=Math.min(rival,(s.x-wx)**2+(s.y-wy)**2);
+    const d1=Math.sqrt(bd)*view.s, d2=Math.sqrt(rival)*view.s;
+    if(d2<22&&d2-d1<8){ touched=true; animateTo({cx:wx,cy:wy,s:view.s*2.5}); return; }
+  }
   selected=best; schedule(); renderPanel();
 }
 const grade=h=>h===0?"g":h<=2?"y":h<=5?"o":"r";
@@ -600,13 +670,14 @@ function renderMarks(u){
 function chips(n,inline){ return `<div class="chips${inline?" inline":""}">${linesOf(n).map(l=>`<span class="chip"><i style="background:${lineColor(l)}"></i>${esc(LINES[l][0])}</span>`).join("")}</div>`; }
 function verdictText(r){ return r.h===0?["Spot on.","g"]:[{y:"So close.",o:"Right area.",r:"Not quite."}[grade(r.h)],grade(r.h)]; }
 function renderPanel(){
-  const P=$("panel");
-  if(mode==="daily"&&state.rounds.length>=ROUNDS&&!state.pending){ P.innerHTML=summaryHTML(); bindSummary(); return; }
+  const P=$("panel"), summary=mode==="daily"&&state.rounds.length>=ROUNDS&&!state.pending;
+  $("card").classList.toggle("sheet",summary); if(!summary) $("card").classList.remove("collapsed");
+  if(summary){ P.innerHTML=summaryHTML(); bindSummary(); return; }
   const res=mode==="daily"?state.pending:practice.done;
   if(res){ const [v,c]=verdictText(res); const last=mode==="daily"&&state.rounds.length>=ROUNDS;
     const detail=res.h===0?`You found ${esc(res.t)}.`:`You picked ${esc(res.g)}, ${res.h>=99?"a long way":`${res.h} stop${res.h>1?"s":""}`} (${res.km} km) from ${esc(res.t)}.`;
-    P.innerHTML=`<p class="verdict ${c}">${v} ${mode==="daily"?`+${res.pts}`:""}</p><p class="detail">${detail}</p>${chips(res.t)}
-      <div class="row"><button class="btn" id="next">${last?"See today's result":"Next station"}</button></div>`;
+    P.innerHTML=`<p class="verdict ${c}">${v} ${mode==="daily"?`+${res.pts}`:""}</p><p class="detail">${detail}</p>
+      <div class="row"><button class="btn" id="next">${last?"See today's result":"Next station"}</button>${chips(res.t,true)}</div>`;
     $("next").onclick=nextRound; $("next").focus({preventScroll:true}); return; }
   const t=current(), hint=mode==="daily"?state.hint:practice.hint;
   P.innerHTML=`<p class="find">Find this station</p><p class="station">${esc(t)}</p>
@@ -618,14 +689,16 @@ const emoji=r=>({g:"🟩",y:"🟨",o:"🟧",r:"🟥"}[grade(r.h)]);
 function shareText(){ const tot=state.rounds.reduce((a,r)=>a+r.pts,0); return `Mind the Map #${puzzleNo}  ${tot}/${ROUNDS*100}\n${state.rounds.map(emoji).join("")}`; }
 function summaryHTML(){
   const tot=state.rounds.reduce((a,r)=>a+r.pts,0), exact=state.rounds.filter(r=>r.h===0).length, st=store.get("mtm:stats")||{played:1,streak:1};
-  return `<div class="summary"><h2>Today's result</h2><p class="detail" style="margin:0">${tot} of ${ROUNDS*100} points, ${exact} of ${ROUNDS} spot on</p>
+  return `<div class="summary"><div class="sum-head"><h2>Today's result</h2><button class="sheet-toggle" id="sheet-toggle" aria-expanded="true">Hide</button></div>
+    <div class="sum-body"><p class="detail" style="margin:0">${tot} of ${ROUNDS*100} points, ${exact} of ${ROUNDS} spot on</p>
     <div class="bigtiles">${state.rounds.map(r=>`<span class="tile ${grade(r.h)}" title="${esc(r.t)}"></span>`).join("")}</div>
     <div class="stats"><div><b>${st.played}</b>played</div><div><b>${st.streak}</b>day streak</div><div><b id="cd">--:--:--</b>until the next puzzle</div></div>
-    <div class="row"><button class="btn" id="share">Share result</button><button class="btn ghost" id="prac">Practise with random stations</button><span class="copied" id="copied"></span></div></div>`;
+    <div class="row"><button class="btn" id="share">Share result</button><button class="btn ghost" id="prac">Practise<span class="long"> with random stations</span></button></div><span class="copied" id="copied"></span></div></div>`;
 }
 let cdT;
 function bindSummary(){
   $("share").onclick=async()=>{ const txt=shareText(); try{ if(navigator.share&&matchMedia("(pointer:coarse)").matches){ await navigator.share({text:txt}); return; } await navigator.clipboard.writeText(txt); $("copied").textContent="Copied to clipboard"; }catch(e){ $("copied").textContent=txt.replace("\n"," "); } };
+  $("sheet-toggle").onclick=e=>{ const open=!$("card").classList.toggle("collapsed"); e.target.textContent=open?"Hide":"Show"; e.target.setAttribute("aria-expanded",open); };
   $("prac").onclick=()=>{ mode="practice"; practice.target=randomName(); selected=null; animateTo(startView()); renderAll(); };
   const tick=()=>{ const n=new Date(),m=new Date(n); m.setHours(24,0,0,0); const s=Math.max(0,Math.floor((m-n)/1000)); const c=$("cd"); if(!c){clearInterval(cdT);return;}
     c.textContent=[s/3600|0,(s%3600)/60|0,s%60].map(v=>String(v).padStart(2,"0")).join(":"); if(s===0) location.reload(); };
@@ -633,7 +706,7 @@ function bindSummary(){
 }
 function renderTiles(){
   const T=$("tiles");
-  if(mode==="practice"){ T.className="practice-count"; T.innerHTML=`Practice: ${practice.correct}/${practice.count} spot on · <a href="#" id="back" style="color:inherit">today's puzzle</a>`;
+  if(mode==="practice"){ T.className="practice-count"; T.innerHTML=`<span class="long">Practice: </span>${practice.correct}/${practice.count}<span class="long"> spot on</span> · <a href="#" id="back" style="color:inherit"><span class="long">today's puzzle</span><span class="short">Today</span></a>`;
     $("back").onclick=e=>{e.preventDefault(); mode="daily"; selected=null; renderAll();}; return; }
   T.className="tiles"; let h=""; for(let i=0;i<ROUNDS;i++){ const r=state.rounds[i]; h+=`<span class="tile ${r?grade(r.h):""} ${!r&&i===state.rounds.length?"cur":""}"></span>`; } T.innerHTML=h;
 }
@@ -652,6 +725,8 @@ $("m-geo").setAttribute("aria-pressed",mapMode==="geo"); $("m-sch").setAttribute
 buildMap(); orderBundles("geo"); measure(); view=clampView(startView());
 if(state.pending) revealFit(state.pending);
 renderAll();
+if(matchMedia("(pointer:coarse)").matches) $("toast").textContent="Pinch to zoom, drag to move";
+new ResizeObserver(()=>document.documentElement.style.setProperty("--card-h",$("card").offsetHeight+"px")).observe($("card"));
 new ResizeObserver(()=>{ finishMapTransition();const oW=W; measure(); if(!oW||!touched) view=clampView(startView()); geomDirty=true; schedule(); }).observe(svg);
 
 </script>

@@ -163,6 +163,19 @@ test('mobile zoom, whole-map fit, pointer selection and keyboard pan', async()=>
   } finally { await g.close(); }
 });
 
+test('a touch between crowded stations zooms in instead of picking one', async()=>{
+  const g=game({width:390,height:500});
+  try {
+    g.click('m-sch');g.click('zall');
+    const v=g.api.view,s=g.api.stationsNamed('Bank')[0],before=v.s;
+    const event={pointerId:1,pointerType:'touch',clientX:(s.x-v.cx)*v.s+195,clientY:(s.y-v.cy)*v.s+250,bubbles:true};
+    g.map.dispatchEvent(new g.window.PointerEvent('pointerdown',event));
+    g.map.dispatchEvent(new g.window.PointerEvent('pointerup',event));g.flush();
+    assert.equal(g.api.selected,null);
+    assert.ok(g.api.view.s>before*2);
+  } finally { await g.close(); }
+});
+
 test('stations and tracks move through intermediate positions, and rapid toggles reverse without a jump', async()=>{
   const g=game();
   try {
