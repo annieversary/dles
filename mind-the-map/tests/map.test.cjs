@@ -111,7 +111,9 @@ for (const reduced of [false,true]) test(`switching during an answer animation s
     assert.equal(Number(marker.getAttribute('cx')),answer.x);
     g.click('m-geo');
     assert.equal(g.api.selected.x,g.api.selected.g[0]);
-    assert.ok(g.api.edges.every(e=>e.els.every(p=>p.getAttribute('d') && !/NaN|undefined/.test(p.getAttribute('d')))));
+    const tracks=[...g.window.document.querySelectorAll('#lines path')];
+    assert.ok(tracks.length>10);
+    assert.ok(tracks.every(p=>p.getAttribute('d') && !/NaN|undefined/.test(p.getAttribute('d'))));
   } finally { await g.close(); }
 });
 

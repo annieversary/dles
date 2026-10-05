@@ -181,15 +181,63 @@ let river=RIVER_GEO;
 function riverPath(P){ let d=`M${P[0][0]},${P[0][1]}`;
   for(let i=0;i<P.length-1;i++){ const p0=P[i-1]||P[i],p1=P[i],p2=P[i+1],p3=P[i+2]||p2;
     d+=`C${p1[0]+(p2[0]-p0[0])/6},${p1[1]+(p2[1]-p0[1])/6} ${p2[0]-(p3[0]-p1[0])/6},${p2[1]-(p3[1]-p1[1])/6} ${p2[0]},${p2[1]}`; } return d; }
-function offsetPath(pts,o){
+function offsetPoints(pts,o){
   pts=pts.filter((p,i)=>i===0||Math.hypot(p[0]-pts[i-1][0],p[1]-pts[i-1][1])>2);
-  if(pts.length<2) return "";
-  if(!o) return "M"+pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join("L");
+  if(pts.length<2||!o) return pts;
   const n=pts.length, out=[], nrm=[];
   for(let i=0;i<n-1;i++){ const dx=pts[i+1][0]-pts[i][0], dy=pts[i+1][1]-pts[i][1], L=Math.hypot(dx,dy)||1; nrm.push([-dy/L,dx/L]); }
   for(let i=0;i<n;i++){ let a=nrm[Math.max(0,i-1)], b=nrm[Math.min(n-2,i)]; let mx=a[0]+b[0], my=a[1]+b[1], ml=Math.hypot(mx,my);
     if(ml<1e-6){ mx=b[0]; my=b[1]; ml=1; } mx/=ml; my/=ml; let k=o/Math.max(0.35,mx*b[0]+my*b[1]); out.push([pts[i][0]+mx*k,pts[i][1]+my*k]); }
-  return "M"+out.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join("L");
+  return out;
+}
+const polyLength=pts=>{ let L=0; for(let i=1;i<pts.length;i++) L+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]); return L; };
+function pointAlong(pts,d){ // point at arc length d, the index of the vertex after it, and the travel direction there
+  for(let i=1;i<pts.length;i++){ const a=pts[i-1], b=pts[i], L=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    if(d<=L||i===pts.length-1){ const t=L?Math.max(0,Math.min(1,d/L)):0; return {i,p:[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],dir:[(b[0]-a[0])/(L||1),(b[1]-a[1])/(L||1)]}; }
+    d-=L; }
+}
+const pathData=pts=>"M"+pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join("L");
+/* Every line is drawn as offset edge pieces, trimmed short of each node and rejoined
+   there with a curve, so it stays continuous where bundles bend, grow or shrink. */
+function lineStrokes(u){
+  const gap=3.4*u, base=8*u, pieces=[], ends=new Map(), joins=[];
+  for(const e of edges){ const n=e.lines.length;
+    e.lines.forEach((l,i)=>{
+      const pts=offsetPoints(e.geo,(i-(n-1)/2)*gap); if(pts.length<2) return;
+      const piece={l,pts,len:polyLength(pts),r:[0,0]}; pieces.push(piece);
+      [e.a,e.b].forEach((X,k)=>{ const id=X+":"+l, from=k?[...pts].reverse():pts, q=pointAlong(from,Math.min(piece.len/2,2*base)).p;
+        const d=Math.hypot(q[0]-from[0][0],q[1]-from[0][1])||1;
+        if(!ends.has(id)) ends.set(id,[]);
+        ends.get(id).push({piece,k,p:from[0],out:[(q[0]-from[0][0])/d,(q[1]-from[0][1])/d]}); });
+    });
+  }
+  // A line passing through joins its two pieces; at a branch, each piece joins those leaving roughly opposite it.
+  for(const list of ends.values()){
+    if(list.length===2) joins.push(list);
+    else if(list.length>2) list.forEach((a,i)=>{
+      const dot=b=>a.out[0]*b.out[0]+a.out[1]*b.out[1], others=list.filter(b=>b!==a);
+      const partners=others.filter(b=>dot(b)<0.3);
+      for(const b of partners.length?partners:[others.reduce((p,q)=>dot(q)<dot(p)?q:p)])
+        if(!joins.some(([x,y])=>x===b&&y===a)) joins.push([a,b]);
+    });
+  }
+  for(const [a,b] of joins){ const r=base+1.5*Math.hypot(a.p[0]-b.p[0],a.p[1]-b.p[1]);
+    for(const end of [a,b]) end.piece.r[end.k]=Math.max(end.piece.r[end.k],r); }
+  const out=new Map();
+  const add=(l,pts)=>{ if(!out.has(l)) out.set(l,[]); out.get(l).push(pts); };
+  for(const piece of pieces){
+    const [r0,r1]=piece.r.map(r=>Math.min(r,piece.len*0.4)), s=pointAlong(piece.pts,r0), t=pointAlong(piece.pts,piece.len-r1);
+    piece.ends=[{p:s.p,toward:[-s.dir[0],-s.dir[1]]},{p:t.p,toward:t.dir}]; // travel direction heading into each node
+    add(piece.l,[s.p,...piece.pts.slice(s.i,t.i),t.p]);
+  }
+  for(const [a,b] of joins){
+    const A=a.piece.ends[a.k], B=b.piece.ends[b.k], h=0.4*Math.hypot(A.p[0]-B.p[0],A.p[1]-B.p[1]);
+    const c1=[A.p[0]+A.toward[0]*h,A.p[1]+A.toward[1]*h], c2=[B.p[0]+B.toward[0]*h,B.p[1]+B.toward[1]*h], curve=[];
+    for(let i=0;i<=8;i++){ const t=i/8, m=1-t;
+      curve.push([0,1].map(k=>m*m*m*A.p[k]+3*m*m*t*c1[k]+3*m*t*t*c2[k]+t*t*t*B.p[k])); }
+    add(a.piece.l,curve);
+  }
+  return out;
 }
 
 
@@ -215,13 +263,26 @@ function sideScore(e,l1,l2,m){
     return 0; };
   return walk(e.b)-walk(e.a); // >0: l1 sits to the right of l2 when travelling a->b
 }
+// Where the lines' divergence doesn't decide which side a line takes, the side
+// is carried along the shared run so the pair never swaps without reason.
+function pairSides(l1,l2,m){
+  const shared=edges.filter(e=>e.lines.includes(l1)&&e.lines.includes(l2)), side=new Map(), queue=[];
+  for(const e of shared){ const v=Math.sign(sideScore(e,l1,l2,m)); if(v){ side.set(e,v); queue.push(e); } }
+  for(const seed of shared){
+    if(!side.has(seed)){ side.set(seed,LINE_ORDER.indexOf(l1)<LINE_ORDER.indexOf(l2)?-1:1); queue.push(seed); }
+    while(queue.length){ const e=queue.shift();
+      for(const X of [e.a,e.b]) for(const f of incident.get(X)){
+        if(side.has(f)||!f.lines.includes(l1)||!f.lines.includes(l2)) continue;
+        side.set(f,(e.b===X)===(f.a===X)?side.get(e):-side.get(e)); queue.push(f); } }
+  }
+  return side;
+}
 function orderBundles(m){
+  const sides=new Map(), sideOf=(e,l1,l2)=>{ const k=l1+"-"+l2; if(!sides.has(k)) sides.set(k,pairSides(l1,l2,m)); return sides.get(k).get(e); };
   for(const e of edges){ if(e.lines.length<2) continue;
     const base=e.base||(e.base=[...e.lines]); const sc=new Map(base.map(l=>[l,0]));
-    for(let i=0;i<base.length;i++) for(let j=i+1;j<base.length;j++){ const v=sideScore(e,base[i],base[j],m); sc.set(base[i],sc.get(base[i])+v); sc.set(base[j],sc.get(base[j])-v); }
+    for(let i=0;i<base.length;i++) for(let j=i+1;j<base.length;j++){ const v=sideOf(e,base[i],base[j]); sc.set(base[i],sc.get(base[i])+v); sc.set(base[j],sc.get(base[j])-v); }
     const order=[...base].sort((p,q)=>(sc.get(p)-sc.get(q))||(LINE_ORDER.indexOf(p)-LINE_ORDER.indexOf(q)));
-    // keep the drawn elements in sync with the new order
-    if(e.els){ const map=new Map(e.lines.map((l,i)=>[l,[e.els[i],e.st[i]]])); e.els=order.map(l=>map.get(l)[0]); e.st=order.map(l=>map.get(l)[1]); }
     e.lines=order; }
 }
 /* ---------- view / pan-zoom ---------- */
@@ -238,14 +299,17 @@ function clampView(v){ v.s=Math.max(minS,Math.min(maxS,v.s));
   v.cx=Math.max(all.minx-mx,Math.min(all.maxx+mx,v.cx)); v.cy=Math.max(all.miny-my,Math.min(all.maxy+my,v.cy)); return v; }
 function startView(m=mapMode){ const r=W<700?9000:24000; const pts=stationsForMode(m).filter(s=>Math.hypot(s.g[0]-FCX,s.g[1]-FCY)<r).map(s=>s[key(m)]); return fitBox(bboxOf(pts),W<700?10:24); }
 
+const lineEls=new Map();
 function buildMap(){
   const diagram=$("diagram");
   for(const [id,line] of Object.entries(LINES)) diagram.style.setProperty(`--line-${id}`,line[1]);
   diagram.innerHTML=SCHEMATIC.art;
   diagramStations.forEach(s=>{ s.el=el("circle",{cx:s.x,cy:s.y,r:48,fill:"var(--dot)",stroke:"var(--ink)","stroke-width":18},$("diagram-dots")); });
   const gl=$("lines"), gs=$("stripes"), gd=$("dots");
-  edges.forEach(e=>{ e.els=e.lines.map(l=>el("path",{fill:"none",stroke:lineColor(l),"stroke-width":3.2,"stroke-linecap":"round","stroke-linejoin":"round","vector-effect":"non-scaling-stroke"},gl));
-    e.st=e.lines.map(l=>STRIPED.has(l)?el("path",{fill:"none",stroke:"var(--land)","stroke-width":1.1,"stroke-linecap":"round","stroke-linejoin":"round","vector-effect":"non-scaling-stroke"},gs):null); });
+  const stroke={fill:"none","stroke-linecap":"round","stroke-linejoin":"round","vector-effect":"non-scaling-stroke"};
+  const drawn=[...new Set(edges.flatMap(e=>e.lines))].sort((p,q)=>LINE_ORDER.indexOf(p)-LINE_ORDER.indexOf(q));
+  for(const l of drawn) lineEls.set(l,[el("path",{...stroke,stroke:lineColor(l),"stroke-width":3.2},gl),
+    STRIPED.has(l)?el("path",{...stroke,stroke:"var(--land)","stroke-width":1.1},gs):null]);
   stations.forEach(s=>{ s.el=el("circle",{r:1,fill:"var(--dot)",stroke:"var(--ink)","vector-effect":"non-scaling-stroke"},gd); });
 }
 let raf=0, lastGeomS=0, geomDirty=true;
@@ -258,14 +322,12 @@ function render(){
   for(const id of ["river","lines","stripes","dots"]) $(id).style.display=diagram?"none":"";
   svg.setAttribute("viewBox",`${view.cx-W/2*u} ${view.cy-H/2*u} ${W*u} ${H*u}`);
   if(!diagram && (geomDirty || Math.abs(Math.log(view.s/lastGeomS))>0.04)){
-    lastGeomS=view.s; geomDirty=false; const gap=3.4*u;
+    lastGeomS=view.s; geomDirty=false;
     $("river").setAttribute("d",riverPath(river));
 
     $("river").setAttribute("stroke-width",Math.max(260,7*u));
-    for(const e of edges){
-      // lines sharing identical geometry in the current style are offset as one bundle
-      const grp=new Map(); e.lines.forEach((l,i)=>{ const key=mapMode==="geo"?"g":e.diaKey[l]; if(!grp.has(key)) grp.set(key,[]); grp.get(key).push(i); });
-      for(const idxs of grp.values()){ const n=idxs.length; idxs.forEach((i,j)=>{ const d=offsetPath(e.curL[i],(j-(n-1)/2)*gap); e.els[i].setAttribute("d",d); if(e.st[i]) e.st[i].setAttribute("d",d); }); } }
+    const strokes=lineStrokes(u);
+    for(const [l,els] of lineEls){ const d=(strokes.get(l)||[]).map(pathData).join(""); for(const p of els) p?.setAttribute("d",d); }
     const z=Math.max(1,view.s/minS), small=Math.max(1.1,Math.min(4.2,1+0.72*Math.log2(z))), big=small*1.3;
     $("dots").setAttribute("stroke-width",Math.min(1.4,0.35+small*0.28).toFixed(2));
     for(const s of stations){ s.el.setAttribute("cx",s.x); s.el.setAttribute("cy",s.y); s.el.setAttribute("r",(s.lines.size>1?big:small)*u); }
@@ -355,12 +417,11 @@ function prepareMapTransition(geoView,diaView){
   const rg=sampleRiver();
   path([rg],[rg.map(warpGeo)],{fill:"none",stroke:"var(--river)"},geoGroup,Math.max(260*geoView.s,7),8);
   // Keep the source map's bundled line offsets at its original zoom level.
-  for(const e of edges)e.lines.forEach((l,i)=>{
-    const points=pairs(offsetPath(e.geo,(i-(e.lines.length-1)/2)*3.4/geoView.s).match(/-?\d+(?:\.\d+)?/g).map(Number));
-    const g=samplePolyline(points,180),d=g.map(warpFor(geoWarps,"g","d",l));
-    path([g],[d],{fill:"none",stroke:lineColor(l)},geoGroup,3.2,2.2707*20*diaView.s);
-    if(STRIPED.has(l))path([g],[d],{fill:"none",stroke:"var(--land)"},geoGroup,1.1,.7*20*diaView.s);
-  });
+  for(const [l,runs] of lineStrokes(1/geoView.s)){
+    const warp=warpFor(geoWarps,"g","d",l),g=runs.map(run=>samplePolyline(run,180)),d=g.map(run=>run.map(warp));
+    path(g,d,{fill:"none",stroke:lineColor(l)},geoGroup,3.2,2.2707*20*diaView.s);
+    if(STRIPED.has(l))path(g,d,{fill:"none",stroke:"var(--land)"},geoGroup,1.1,.7*20*diaView.s);
+  }
   for(const p of diagramMorphGeometry)path(p.geo,p.runs,{fill:p.fill,stroke:p.stroke},diaGroup,
     p.width?Math.max(1,p.width*diaView.s):0,p.width*diaView.s);
   const labelled=new Set();
@@ -569,7 +630,7 @@ document.addEventListener("keydown",e=>{
 /* ---------- boot ---------- */
 state=newDaily(); $("pnum").textContent="#"+puzzleNo;
 $("m-geo").setAttribute("aria-pressed",mapMode==="geo"); $("m-sch").setAttribute("aria-pressed",mapMode==="dia");
-buildMap(); orderBundles("geo"); edges.forEach(e=>{e.curL=e.lines.map(()=>e.geo);}); measure(); view=clampView(startView());
+buildMap(); orderBundles("geo"); measure(); view=clampView(startView());
 if(state.pending) revealFit(state.pending);
 renderAll();
 new ResizeObserver(()=>{ finishMapTransition();const oW=W; measure(); if(!oW||!touched) view=clampView(startView()); geomDirty=true; schedule(); }).observe(svg);
