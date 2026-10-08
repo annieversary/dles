@@ -709,7 +709,7 @@ function renderPanel(){
   $("go").onclick=confirmGuess; if($("hint")) $("hint").onclick=useHint;
 }
 const emoji=r=>({g:"🟩",y:"🟨",o:"🟧",r:"🟥"}[grade(r.h)]);
-function shareText(){ const tot=state.rounds.reduce((a,r)=>a+r.pts,0); return `Mind the Map #${puzzleNo}  ${tot}/${ROUNDS*100}\n${state.rounds.map(emoji).join("")}`; }
+function shareText(){ const tot=state.rounds.reduce((a,r)=>a+r.pts,0); return `Mind the Map #${puzzleNo}  ${tot}/${ROUNDS*100}\n${state.rounds.map(emoji).join("")}\nhttps://dles.versary.town/mind-the-map/`; }
 function summaryHTML(){
   const tot=state.rounds.reduce((a,r)=>a+r.pts,0), exact=state.rounds.filter(r=>r.h===0).length, st=store.get("mtm:stats")||{played:1,streak:1};
   return `<div class="summary"><div class="sum-head"><h2>Today's result</h2><button class="sheet-toggle" id="sheet-toggle" aria-expanded="true">Hide</button></div>
